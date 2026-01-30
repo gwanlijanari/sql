@@ -1,0 +1,27 @@
+postgres=# create role rl_client with password '111';
+alter role rl_client LOGIN;
+grant connect on database "it9_24_1shvartsim" to rl_client;
+ERROR:  role "rl_client" already exists
+ALTER ROLE
+GRANT
+
+postgres=# create role rl_pharmacist with password '222';
+alter role rl_pharmacist LOGIN;
+grant connect on database "it9_24_1shvartsim" to rl_pharmacist;
+CREATE ROLE
+ALTER ROLE
+GRANT
+
+postgres=# create role rl_supplier with password '333';
+alter role rl_supplier LOGIN;
+grant connect on database "it9_24_1shvartsim" to rl_supplier;
+CREATE ROLE
+ALTER ROLE
+GRANT
+
+postgres=# create role rl_admin with password '123';
+alter role rl_admin LOGIN;
+grant connect on database "it9_24_1shvartsim" to rl_admin;
+CREATE ROLE
+ALTER ROLE
+GRANT
