@@ -156,16 +156,16 @@ BEGIN
         DROP CONSTRAINT IF EXISTS product_indication_indication_id_fkey,
         DROP CONSTRAINT IF EXISTS product_indication_article_fkey;
     
-    DROP TABLE IF EXISTS orders CASCADE;
-    DROP TABLE IF EXISTS supplier_contracts CASCADE;
-    DROP TABLE IF EXISTS product_contraindication CASCADE;
-    DROP TABLE IF EXISTS product_indication CASCADE;
-    DROP TABLE IF EXISTS contraindications CASCADE;
-    DROP TABLE IF EXISTS indications CASCADE;
-    DROP TABLE IF EXISTS suppliers CASCADE;
-    DROP TABLE IF EXISTS employees CASCADE;
-    DROP TABLE IF EXISTS clients CASCADE;
-    DROP TABLE IF EXISTS products CASCADE;
+    DROP TABLE IF EXISTS orders ;
+    DROP TABLE IF EXISTS supplier_contracts ;
+    DROP TABLE IF EXISTS product_contraindication ;
+    DROP TABLE IF EXISTS product_indication ;
+    DROP TABLE IF EXISTS contraindications ;
+    DROP TABLE IF EXISTS indications ;
+    DROP TABLE IF EXISTS suppliers ;
+    DROP TABLE IF EXISTS employees ;
+    DROP TABLE IF EXISTS clients ;
+    DROP TABLE IF EXISTS products ;
     
     CALL create_tables_with_indexes();
 END;
