@@ -117,10 +117,6 @@ BEGIN
     GRANT ALL ON SCHEMA public TO public;
     GRANT ALL ON SCHEMA public TO postgres;
     
-    RAISE NOTICE 'Все таблицы удалены. Схема public пересоздана.';
-    
     CALL create_all_tables();
-    
-    RAISE NOTICE 'Все таблицы успешно пересозданы!';
 END;
 $$;
