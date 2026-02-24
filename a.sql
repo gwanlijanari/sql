@@ -103,6 +103,23 @@ BEGIN
         employee_login VARCHAR(50) REFERENCES employees(login) ON DELETE SET NULL,
         article INTEGER REFERENCES products(article) ON DELETE CASCADE
     );
+
+    CREATE INDEX IF NOT EXISTS idx_product_indication_indication_id ON product_indication(indication_id);
+    CREATE INDEX IF NOT EXISTS idx_product_indication_article ON product_indication(article);
+    
+    CREATE INDEX IF NOT EXISTS idx_product_contraindication_contraindication_id ON product_contraindication(contraindication_id);
+    CREATE INDEX IF NOT EXISTS idx_product_contraindication_article ON product_contraindication(article);
+    
+    CREATE INDEX IF NOT EXISTS idx_supplier_contracts_article ON supplier_contracts(article);
+    CREATE INDEX IF NOT EXISTS idx_supplier_contracts_company_name ON supplier_contracts(company_name);
+    
+    CREATE INDEX IF NOT EXISTS idx_orders_client_phone ON orders(client_phone);
+    CREATE INDEX IF NOT EXISTS idx_orders_employee_login ON orders(employee_login);
+    CREATE INDEX IF NOT EXISTS idx_orders_article ON orders(article);
+    
+    CREATE INDEX IF NOT EXISTS idx_clients_login ON clients(login);
+    CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+
 END;
 $$;
 
@@ -110,13 +127,54 @@ CREATE OR REPLACE PROCEDURE recreate_tables()
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    DROP SCHEMA public CASCADE;
+    DROP INDEX IF EXISTS idx_orders_client_phone;
+    DROP INDEX IF EXISTS idx_orders_employee_login;
+    DROP INDEX IF EXISTS idx_orders_article;
+    DROP INDEX IF EXISTS idx_supplier_contracts_article;
+    DROP INDEX IF EXISTS idx_supplier_contracts_company_name;
+    DROP INDEX IF EXISTS idx_product_contraindication_contraindication_id;
+    DROP INDEX IF EXISTS idx_product_contraindication_article;
+    DROP INDEX IF EXISTS idx_product_indication_indication_id;
+    DROP INDEX IF EXISTS idx_product_indication_article;
+    DROP INDEX IF EXISTS idx_clients_login;
+    DROP INDEX IF EXISTS idx_products_name;
     
-    CREATE SCHEMA public;
+    RAISE NOTICE 'Индексы удалены';
     
-    GRANT ALL ON SCHEMA public TO public;
-    GRANT ALL ON SCHEMA public TO postgres;
+    ALTER TABLE IF EXISTS orders 
+        DROP CONSTRAINT IF EXISTS orders_client_phone_fkey,
+        DROP CONSTRAINT IF EXISTS orders_employee_login_fkey,
+        DROP CONSTRAINT IF EXISTS orders_article_fkey;
     
-    CALL create_all_tables();
+    ALTER TABLE IF EXISTS supplier_contracts 
+        DROP CONSTRAINT IF EXISTS supplier_contracts_article_fkey,
+        DROP CONSTRAINT IF EXISTS supplier_contracts_company_name_fkey;
+    
+    ALTER TABLE IF EXISTS product_contraindication 
+        DROP CONSTRAINT IF EXISTS product_contraindication_contraindication_id_fkey,
+        DROP CONSTRAINT IF EXISTS product_contraindication_article_fkey;
+    
+    ALTER TABLE IF EXISTS product_indication 
+        DROP CONSTRAINT IF EXISTS product_indication_indication_id_fkey,
+        DROP CONSTRAINT IF EXISTS product_indication_article_fkey;
+    
+    RAISE NOTICE 'Внешние ключи удалены';
+    
+    DROP TABLE IF EXISTS orders CASCADE;
+    DROP TABLE IF EXISTS supplier_contracts CASCADE;
+    DROP TABLE IF EXISTS product_contraindication CASCADE;
+    DROP TABLE IF EXISTS product_indication CASCADE;
+    DROP TABLE IF EXISTS contraindications CASCADE;
+    DROP TABLE IF EXISTS indications CASCADE;
+    DROP TABLE IF EXISTS suppliers CASCADE;
+    DROP TABLE IF EXISTS employees CASCADE;
+    DROP TABLE IF EXISTS clients CASCADE;
+    DROP TABLE IF EXISTS products CASCADE;
+    
+    RAISE NOTICE 'Таблицы удалены';
+    
+    CALL create_tables_with_indexes();
+    
+    RAISE NOTICE 'База данных успешно пересоздана с индексами';
 END;
 $$;
