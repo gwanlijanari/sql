@@ -139,8 +139,6 @@ BEGIN
     DROP INDEX IF EXISTS idx_clients_login;
     DROP INDEX IF EXISTS idx_products_name;
     
-    RAISE NOTICE 'Индексы удалены';
-    
     ALTER TABLE IF EXISTS orders 
         DROP CONSTRAINT IF EXISTS orders_client_phone_fkey,
         DROP CONSTRAINT IF EXISTS orders_employee_login_fkey,
@@ -158,8 +156,6 @@ BEGIN
         DROP CONSTRAINT IF EXISTS product_indication_indication_id_fkey,
         DROP CONSTRAINT IF EXISTS product_indication_article_fkey;
     
-    RAISE NOTICE 'Внешние ключи удалены';
-    
     DROP TABLE IF EXISTS orders CASCADE;
     DROP TABLE IF EXISTS supplier_contracts CASCADE;
     DROP TABLE IF EXISTS product_contraindication CASCADE;
@@ -171,10 +167,6 @@ BEGIN
     DROP TABLE IF EXISTS clients CASCADE;
     DROP TABLE IF EXISTS products CASCADE;
     
-    RAISE NOTICE 'Таблицы удалены';
-    
     CALL create_tables_with_indexes();
-    
-    RAISE NOTICE 'База данных успешно пересоздана с индексами';
 END;
 $$;
