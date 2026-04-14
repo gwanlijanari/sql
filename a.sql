@@ -27,20 +27,46 @@ CREATE OR REPLACE PROCEDURE create_tables()
 LANGUAGE plpgsql
 AS $$
 BEGIN
+
+    CREATE TABLE IF NOT EXISTS pharmacy_points (
+        point_id VARCHAR(20) PRIMARY KEY, 
+    );
+
+
+    CREATE TABLE IF NOT EXISTS medical_institutions (
+        institution_id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS doctor_profiles (
+        profile_id SERIAL PRIMARY KEY,
+        profile_name VARCHAR(100) UNIQUE NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS doctors (
+        doctor_id SERIAL PRIMARY KEY,
+        last_name VARCHAR(50) NOT NULL,
+        first_name VARCHAR(50) NOT NULL,
+        middle_name VARCHAR(50) DEFAULT 'Нет данных',
+        profile_id INTEGER REFERENCES doctor_profiles(profile_id),
+        institution_id INTEGER REFERENCES medical_institutions(institution_id)
+    );
+
     CREATE TABLE IF NOT EXISTS indications (
         indication_id SERIAL PRIMARY KEY,
         indication_name VARCHAR(50)
     );
 
 
-    CREATE TABLE IF NOT EXISTS products (
-        article VARCHAR(20) PRIMARY KEY,  
-        name VARCHAR(100),
-        supplier VARCHAR(100),
-        country VARCHAR(100),
-        brand VARCHAR(100),
-        price INT
-    );
+CREATE TABLE IF NOT EXISTS products (
+    article VARCHAR(20) PRIMARY KEY,  
+    name VARCHAR(100) UNIQUE,
+    supplier VARCHAR(100),
+    country VARCHAR(100),
+    brand VARCHAR(100),
+    price INT,
+    is_prescription BOOLEAN DEFAULT FALSE 
+);
 
     CREATE TABLE IF NOT EXISTS product_indication (
         indication_id INTEGER REFERENCES indications(indication_id) ON DELETE CASCADE,
@@ -79,6 +105,13 @@ BEGIN
         password VARCHAR(50) NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS employee_point (
+    point_id VARCHAR(20) REFERENCES pharmacy_points(point_id),
+    employee_login VARCHAR(50) REFERENCES employees(login),
+    PRIMARY KEY (point_id, employee_login)
+    );
+
+
     CREATE TABLE IF NOT EXISTS suppliers (
         company_name VARCHAR(50) PRIMARY KEY,
         company_address VARCHAR(50),
@@ -106,6 +139,31 @@ BEGIN
         employee_login VARCHAR(50) REFERENCES employees(login) ON DELETE SET NULL,
         article VARCHAR(20) REFERENCES products(article) ON DELETE CASCADE 
     );
+
+    CREATE TABLE IF NOT EXISTS prescriptions (
+        prescription_number VARCHAR(25) PRIMARY KEY, 
+        client_phone VARCHAR(50) REFERENCES clients(phone_number),
+        doctor_id INTEGER REFERENCES doctors(doctor_id),
+        issue_date DATE NOT NULL,
+        validity_period_months INT CHECK (validity_period_months > 0) 
+    );
+
+    CREATE TABLE IF NOT EXISTS prescription_items (
+        prescription_number VARCHAR(25) REFERENCES prescriptions(prescription_number),
+        article VARCHAR(20) REFERENCES products(article),
+        dosage VARCHAR(100),
+        daily_dose VARCHAR(100),
+        PRIMARY KEY (prescription_number, article)
+    );
+
+
+    CREATE TABLE IF NOT EXISTS prescription_sales (
+        sale_id SERIAL PRIMARY KEY,
+        prescription_number VARCHAR(25) REFERENCES prescriptions(prescription_number),
+        article VARCHAR(20) REFERENCES products(article),
+        sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
 
     CREATE INDEX IF NOT EXISTS idx_product_indication_indication_id ON product_indication(indication_id);
     CREATE INDEX IF NOT EXISTS idx_product_indication_article ON product_indication(article);
@@ -170,6 +228,15 @@ BEGIN
     DROP TABLE IF EXISTS clients CASCADE;
     DROP TABLE IF EXISTS products CASCADE;
     
+
+
+    DROP TABLE IF EXISTS prescription_sales CASCADE;
+    DROP TABLE IF EXISTS prescription_items CASCADE;
+    DROP TABLE IF EXISTS prescriptions CASCADE;
+    DROP TABLE IF EXISTS doctors CASCADE;
+    DROP TABLE IF EXISTS doctor_profiles CASCADE;
+    DROP TABLE IF EXISTS medical_institutions CASCADE;
+
     CALL create_tables();  
 END;
 $$;
@@ -178,6 +245,8 @@ CREATE OR REPLACE PROCEDURE prc_LoadSampleData ()
 LANGUAGE plpgsql
 AS $$
 BEGIN
+
+
 
 INSERT INTO suppliers (company_name, company_address, representative_first_name, representative_last_name, representative_middle_name) VALUES
 ('Формацевт Помощь', 'г. Москва, ул. Серпуховская д.15, стр. 1', 'Игорь', 'Семёнов', 'Аркадьевич'),
@@ -249,6 +318,58 @@ INSERT INTO orders (order_number, client_phone, employee_login, article) VALUES
 ('ЗК000000003', '+7(924)662-72-12', 'PetrovPP', 'ЛП-0000001'),
 ('ЗК000000004', '+7(992)528-14-83', 'DmitrievDD', 'ЛП-0000005'),
 ('ЗК000000005', '+7(983)772-15-11', 'DmitrievDD', 'ЛП-0000006');
+
+INSERT INTO medical_institutions (name) VALUES 
+('ГКБ № 10'), 
+('ГКБ № 31')  ;
+
+INSERT INTO doctor_profiles (profile_name) VALUES 
+('Терапевт'), 
+('Травматолог')  ;
+
+INSERT INTO doctors (last_name, first_name, middle_name, profile_id, institution_id) VALUES
+('Петров', 'Роман', 'Дмитриевич', 1, 1),
+('Георгиев', 'Олег', 'Владимирович', 2, 2)  ;
+
+INSERT INTO products (article, name, is_prescription) VALUES
+('ЛП-0000001', 'Препарат 1', FALSE),
+('ЛП-0000002', 'Фротувазол', TRUE),
+('ЛП-0000003', 'Препарат 3', FALSE),
+('ЛП-0000004', 'Картитозанол', TRUE),
+('ЛП-0000005', 'Препарат 5', FALSE),
+('ЛП-0000006', 'Флютиозипам', TRUE),
+('ЛП-0000007', 'Препарат 7', TRUE)  ;
+
+INSERT INTO clients (phone_number, last_name, first_name, middle_name) VALUES
+('89001112233', 'Алексеев', 'М.', 'А.'),
+('89004445566', 'Иванова', 'И.', 'Д.')  ;
+
+INSERT INTO prescriptions (prescription_number, client_phone, doctor_id, issue_date, validity_period_months) VALUES
+('РЦ-ПР/23/0000000001', '89001112233', 1, '2023-07-08', 6),
+('РЦ-ПР/23/0000000002', '89004445566', 2, '2023-09-10', 12),
+('РЦ-ПР/23/0000000003', '89004445566', 2, '2023-08-20', 1)  ;
+
+INSERT INTO prescription_items (prescription_number, article, dosage, daily_dose) VALUES
+('РЦ-ПР/23/0000000001', 'ЛП-0000002', '30 т, 5 мг', '3 р/д, по 1 т'),
+('РЦ-ПР/23/0000000002', 'ЛП-0000002', '60 т, 5 мг', '2 р/д по 2 т'),
+('РЦ-ПР/23/0000000003', 'ЛП-0000004', '200 мл', '3 р/д мазать'),
+('РЦ-ПР/23/0000000003', 'ЛП-0000006', '100 мл', 'Мазать утром и вечером');
+
+INSERT INTO prescription_sales (prescription_number, article, sale_date) VALUES
+('РЦ-ПР/23/0000000001', 'ЛП-0000002', '2023-07-09'),
+('РЦ-ПР/23/0000000001', 'ЛП-0000002', '2023-08-10'),
+('РЦ-ПР/23/0000000001', 'ЛП-0000002', '2023-09-11'),
+('РЦ-ПР/23/0000000001', 'ЛП-0000002', '2023-10-09'),
+('РЦ-ПР/23/0000000002', 'ЛП-0000002', '2023-09-12'),
+('РЦ-ПР/23/0000000002', 'ЛП-0000002', '2023-10-16'),
+('РЦ-ПР/23/0000000003', 'ЛП-0000004', '2023-08-15'),
+('РЦ-ПР/23/0000000003', 'ЛП-0000004', '2023-09-17'),
+('РЦ-ПР/23/0000000003', 'ЛП-0000006', '2023-08-17'),
+('РЦ-ПР/23/0000000003', 'ЛП-0000006', '2023-09-19');
+
+INSERT INTO pharmacy_points (point_id) VALUES
+('АП-001'),
+('АП-002');
 
 END;
 $$;
